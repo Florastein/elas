@@ -16,31 +16,60 @@ export default function Background3D() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.current.appendChild(renderer.domElement);
 
-    // Particles
-    const particlesGeometry = new THREE.BufferGeometry();
-    const count = 1500;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
+    const group = new THREE.Group();
+    scene.add(group);
 
-    for (let i = 0; i < count * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 15;
-      colors[i] = Math.random();
+    // Particles Data
+    const particlesCount = 120;
+    const positions = new Float32Array(particlesCount * 3);
+    const particlesData: { velocity: THREE.Vector3; numConnections: number }[] = [];
+
+    const minDistance = 2.5;
+    const maxParticles = particlesCount;
+
+    for (let i = 0; i < maxParticles; i++) {
+      const x = (Math.random() - 0.5) * 10;
+      const y = (Math.random() - 0.5) * 10;
+      const z = (Math.random() - 0.5) * 10;
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      particlesData.push({
+        velocity: new THREE.Vector3(-1 + Math.random() * 2, -1 + Math.random() * 2, -1 + Math.random() * 2).multiplyScalar(0.01),
+        numConnections: 0
+      });
     }
 
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.02,
-      sizeAttenuation: true,
-      vertexColors: true,
+    // Points
+    const pMaterial = new THREE.PointsMaterial({
+      color: 0x8b5cf6, // Violet
+      size: 0.05,
       transparent: true,
       opacity: 0.4,
-      blending: THREE.AdditiveBlending
+      sizeAttenuation: true
     });
 
-    const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particles);
+    const pGeometry = new THREE.BufferGeometry();
+    pGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+
+    const pointCloud = new THREE.Points(pGeometry, pMaterial);
+    group.add(pointCloud);
+
+    // Lines
+    const lMaterial = new THREE.LineBasicMaterial({
+      color: 0x8b5cf6,
+      transparent: true,
+      opacity: 0.1,
+    });
+
+    const lGeometry = new THREE.BufferGeometry();
+    const linePositions = new Float32Array(maxParticles * maxParticles * 3);
+    lGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3).setUsage(THREE.DynamicDrawUsage));
+
+    const lineMesh = new THREE.LineSegments(lGeometry, lMaterial);
+    group.add(lineMesh);
 
     camera.position.z = 5;
 
@@ -55,7 +84,6 @@ export default function Background3D() {
 
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Resize handler
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -64,31 +92,70 @@ export default function Background3D() {
 
     window.addEventListener('resize', handleResize);
 
-    // Animation loop
+    // Animation
     const animate = () => {
       requestAnimationFrame(animate);
 
-      particles.rotation.y += 0.001;
-      particles.rotation.x += 0.0005;
+      let vertexpos = 0;
+      let linepos = 0;
 
-      // Smoothly follow mouse
-      particles.position.x += (mouseX * 0.5 - particles.position.x) * 0.05;
-      particles.position.y += (mouseY * 0.5 - particles.position.y) * 0.05;
+      for (let i = 0; i < maxParticles; i++) {
+        const pData = particlesData[i];
+
+        positions[i * 3] += pData.velocity.x;
+        positions[i * 3 + 1] += pData.velocity.y;
+        positions[i * 3 + 2] += pData.velocity.z;
+
+        // Bounce
+        if (positions[i * 3] < -5 || positions[i * 3] > 5) pData.velocity.x = -pData.velocity.x;
+        if (positions[i * 3 + 1] < -5 || positions[i * 3 + 1] > 5) pData.velocity.y = -pData.velocity.y;
+        if (positions[i * 3 + 2] < -5 || positions[i * 3 + 2] > 5) pData.velocity.z = -pData.velocity.z;
+
+        // Connections
+        for (let j = i + 1; j < maxParticles; j++) {
+          const dx = positions[i * 3] - positions[j * 3];
+          const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
+          const dz = positions[i * 3 + 2] - positions[j * 3 + 2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+          if (dist < minDistance) {
+            linePositions[linepos++] = positions[i * 3];
+            linePositions[linepos++] = positions[i * 3 + 1];
+            linePositions[linepos++] = positions[i * 3 + 2];
+
+            linePositions[linepos++] = positions[j * 3];
+            linePositions[linepos++] = positions[j * 3 + 1];
+            linePositions[linepos++] = positions[j * 3 + 2];
+          }
+        }
+      }
+
+      lineMesh.geometry.setDrawRange(0, linepos / 3);
+      lineMesh.geometry.attributes.position.needsUpdate = true;
+      pointCloud.geometry.attributes.position.needsUpdate = true;
+
+      // Rotation
+      group.rotation.y += 0.001;
+      
+      // Follow mouse
+      group.position.x += (mouseX * 0.5 - group.position.x) * 0.05;
+      group.position.y += (mouseY * 0.5 - group.position.y) * 0.05;
 
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // Cleanup
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
-      if (containerRef.current) {
+      if (containerRef.current?.contains(renderer.domElement)) {
         containerRef.current.removeChild(renderer.domElement);
       }
-      particlesGeometry.dispose();
-      particlesMaterial.dispose();
+      pGeometry.dispose();
+      pMaterial.dispose();
+      lGeometry.dispose();
+      lMaterial.dispose();
       renderer.dispose();
     };
   }, []);
@@ -96,8 +163,7 @@ export default function Background3D() {
   return (
     <div 
       ref={containerRef} 
-      className="fixed inset-0 -z-10 pointer-events-none bg-bg"
-      style={{ opacity: 0.6 }}
+      className="fixed inset-0 -z-10 pointer-events-none bg-white"
     />
   );
 }
