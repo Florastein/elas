@@ -8,9 +8,13 @@ export default function Navbar() {
         <span>SAAB<span className="text-text-main"> AFFORDABLE</span></span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <button className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/10">
-          Sign In
+      <div className="flex items-center gap-8">
+        <a href="#" className="hidden md:block text-sm font-bold text-text-muted hover:text-primary transition-colors">How it works</a>
+        <a href="#" className="hidden md:block text-sm font-bold text-text-muted hover:text-primary transition-colors">Help Center</a>
+        <div className="h-6 w-[1px] bg-border mx-2 hidden md:block"></div>
+        <button className="text-sm font-bold text-text-muted hover:text-primary transition-colors">Sign In</button>
+        <button className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20">
+          Register
         </button>
       </div>
     </nav>

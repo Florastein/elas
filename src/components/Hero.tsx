@@ -79,129 +79,162 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-xl text-text-muted leading-relaxed mb-10 max-w-[550px]"
+          className="text-xl text-text-muted leading-relaxed mb-12 max-w-[550px]"
         >
-          Connect instantly with the most reliable data marketplace. High speed, low cost, 100% automated delivery to any network.
+          Connect instantly with the most reliable data marketplace in Ghana. High speed, ultra-low cost, and 100% automated delivery.
         </motion.p>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-          <div className="flex items-start gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-10 mb-16"
+        >
+          <div className="flex items-start gap-5">
             <div className="icon-box">
-              <Zap className="w-5 h-5 text-accent" />
+              <Zap className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-[1rem] font-bold mb-1 text-text-main">Instant Delivery</h4>
-              <p className="text-[0.85rem] text-text-muted">Receive your data in less than 30 seconds.</p>
+              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Instant Delivery</h4>
+              <p className="text-[0.9rem] text-text-muted leading-snug">Receive your data bundle in less than 30 seconds, guaranteed.</p>
             </div>
           </div>
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-5">
             <div className="icon-box">
-              <ShieldCheck className="w-5 h-5 text-primary" />
+              <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-[1rem] font-bold mb-1 text-text-main">Secure Wallet</h4>
-              <p className="text-[0.85rem] text-text-muted">Bank-grade encryption for all transactions.</p>
+              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Secure Assets</h4>
+              <p className="text-[0.9rem] text-text-muted leading-snug">Bank-grade encryption for every transaction and wallet balance.</p>
             </div>
           </div>
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-5">
             <div className="icon-box">
-              <Globe className="w-5 h-5 text-accent" />
+              <Wifi className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-[1rem] font-bold mb-1 text-text-main">Multi-Network</h4>
-              <p className="text-[0.85rem] text-text-muted">MTN and AirtelTigo supported globally.</p>
+              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Multi-Network</h4>
+              <p className="text-[0.9rem] text-text-muted leading-snug">Supporting MTN, AirtelTigo, and Vodafone with 99.9% uptime.</p>
             </div>
           </div>
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-5">
             <div className="icon-box">
-              <MessageSquare className="w-5 h-5 text-primary" />
+              <MessageSquare className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-[1rem] font-bold mb-1 text-text-main">24/7 Support</h4>
-              <p className="text-[0.85rem] text-text-muted">Human assistance whenever you need it.</p>
+              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Elite Support</h4>
+              <p className="text-[0.9rem] text-text-muted leading-snug">Our dedicated team is available 24/7 to resolve any billing issues.</p>
             </div>
           </div>
+        </motion.div>
+
+        <div className="flex items-center gap-4 text-xs font-bold text-text-muted tracking-widest uppercase py-6 border-t border-black/[0.03]">
+          <span className="shrink-0">Highly Rated by</span>
+          <div className="flex -space-x-2">
+            {[1,2,3,4].map(i => (
+              <img key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100" src={`https://picsum.photos/seed/${i + 10}/32/32`} alt="User" />
+            ))}
+          </div>
+          <span className="ml-2 font-mono">+12k Active Users</span>
         </div>
       </div>
 
       <motion.div 
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2 }}
-        className="card-sleek p-8 relative overflow-hidden group shadow-2xl"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3 }}
+        className="card-sleek p-10 relative overflow-hidden group shadow-2xl"
       >
         <div className="liquid-bg" />
+        <div className="crystal-border" />
         <div className="glass-shine" />
         
-        <h3 className="text-xl font-bold mb-8 text-text-main flex items-center gap-2">
-          <Zap className="w-5 h-5 text-primary fill-primary/10" />
+        <h3 className="text-2xl font-black mb-10 text-text-main flex items-center gap-3">
+          <Zap className="w-6 h-6 text-primary fill-primary/10" />
           Quick Top-up
         </h3>
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div>
-            <label className="flex items-center gap-2 text-[0.85rem] font-bold text-text-muted mb-3 uppercase tracking-wider">
-              <Wifi className="w-4 h-4" />
-              Select Network
+            <label className="flex items-center gap-2 text-[0.8rem] font-black text-text-muted mb-3 uppercase tracking-[0.15em]">
+              Network Provider
             </label>
-            <select 
-              value={network}
-              onChange={(e) => {
-                setNetwork(e.target.value);
-                setSelectedPlanIndex(0);
-              }}
-              className="w-full p-4 rounded-xl border border-white/20 bg-white/10 text-text-main outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all hover:bg-white/20 backdrop-blur-sm"
-            >
-              <option value="MTN">MTN</option>
-              <option value="AirtelTigo">AirtelTigo</option>
-            </select>
+            <div className="relative group/select">
+              <select 
+                value={network}
+                onChange={(e) => {
+                  setNetwork(e.target.value);
+                  setSelectedPlanIndex(0);
+                }}
+                className="w-full p-4.5 rounded-2xl border border-black/5 bg-white/[0.05] text-text-main outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer appearance-none"
+              >
+                <option value="MTN" className="bg-white">MTN Ghana</option>
+                <option value="AirtelTigo" className="bg-white">AirtelTigo</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted opacity-50 group-hover/select:opacity-100 transition-opacity">
+                <ArrowRight className="w-5 h-5 rotate-90" />
+              </div>
+            </div>
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[0.85rem] font-bold text-text-muted mb-3 uppercase tracking-wider">
-              <CreditCard className="w-4 h-4" />
-              Data Plan
+            <label className="flex items-center gap-2 text-[0.8rem] font-black text-text-muted mb-3 uppercase tracking-[0.15em]">
+              Data Subscription
             </label>
-            <select 
-              value={selectedPlanIndex}
-              onChange={(e) => setSelectedPlanIndex(Number(e.target.value))}
-              className="w-full p-4 rounded-xl border border-white/20 bg-white/10 text-text-main outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all hover:bg-white/20 backdrop-blur-sm"
-            >
-              {currentPlans.map((plan, index) => (
-                <option key={index} value={index}>
-                  {plan.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative group/select">
+              <select 
+                value={selectedPlanIndex}
+                onChange={(e) => setSelectedPlanIndex(Number(e.target.value))}
+                className="w-full p-4.5 rounded-2xl border border-black/5 bg-white/[0.05] text-text-main outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer appearance-none"
+              >
+                {currentPlans.map((plan, index) => (
+                  <option key={index} value={index} className="bg-white">
+                    {plan.label} High Speed Plan
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted opacity-50 group-hover/select:opacity-100 transition-opacity">
+                <ArrowRight className="w-5 h-5 rotate-90" />
+              </div>
+            </div>
           </div>
           <div>
-            <label className="flex items-center gap-2 text-[0.85rem] font-bold text-text-muted mb-3 uppercase tracking-wider">
-              <Phone className="w-4 h-4" />
-              Phone Number
+            <label className="flex items-center gap-2 text-[0.8rem] font-black text-text-muted mb-3 uppercase tracking-[0.15em]">
+              Recipient Number
             </label>
-            <input 
-              type="text" 
-              value={phoneNumber}
-              onChange={handlePhoneChange}
-              onBlur={handlePhoneBlur}
-              placeholder="024 123 4567" 
-              className={`w-full p-4 rounded-xl border bg-white/10 text-text-main outline-none focus:ring-1 transition-all hover:bg-white/20 placeholder:text-gray-400 backdrop-blur-sm ${!isValidPhone ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50' : 'border-white/20 focus:border-primary/50 focus:ring-primary/50'}`} 
-            />
+            <div className="relative">
+              <input 
+                type="text" 
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                onBlur={handlePhoneBlur}
+                placeholder="e.g. 024 123 4567" 
+                className={`w-full p-4.5 rounded-2xl border bg-white/[0.05] text-text-main outline-none focus:ring-4 transition-all placeholder:text-gray-300 font-bold ${!isValidPhone ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/5' : 'border-black/5 focus:border-primary/50 focus:ring-primary/5'}`} 
+              />
+              <Phone className={`absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${!isValidPhone ? 'text-red-500' : 'text-text-muted opacity-30'}`} />
+            </div>
             {!isValidPhone && (
-              <p className="text-red-500 text-[0.75rem] mt-1 font-medium">Please enter a valid Ghana phone number (starts with 02 or 05, 10 digits total).</p>
+              <p className="text-red-600 text-[0.75rem] mt-2 font-bold bg-red-50 p-2 rounded-lg border border-red-100">Invalid format: Must start with 02 or 05 (10 digits).</p>
             )}
           </div>
           
-          <div className="bg-primary/10 rounded-xl p-5 border border-primary/10 relative overflow-hidden backdrop-blur-md">
-            <div className="flex justify-between items-center relative z-10">
-              <span className="text-sm font-bold text-text-muted uppercase tracking-wider">Amount to Pay</span>
-              <span className="text-2xl font-black text-primary">GHC {selectedPlan.price.toFixed(2)}</span>
+          <div className="bg-white/[0.05] rounded-2xl p-6 border border-black/5 relative overflow-hidden">
+            <div className="flex justify-between items-end relative z-10">
+              <div className="space-y-1">
+                <span className="block text-[0.7rem] font-black text-text-muted uppercase tracking-widest">Pricing Estimation</span>
+                <span className="text-sm font-bold text-text-muted">GHC {selectedPlan.price.toFixed(2)} total</span>
+              </div>
+              <div className="text-right">
+                <span className="block text-[0.7rem] font-black text-primary uppercase tracking-widest mb-1">Total Payable</span>
+                <span className="text-3xl font-black text-text-main">₵{selectedPlan.price.toFixed(2)}</span>
+              </div>
             </div>
           </div>
 
           <button 
             disabled={!isValidPhone || phoneNumber === ''}
-            className={`w-full py-4 text-white rounded-xl font-black text-lg transition-all shadow-lg active:scale-[0.98] ${(!isValidPhone || phoneNumber === '') ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-primary hover:brightness-110 shadow-primary/20'}`}
+            className={`w-full py-5 text-white rounded-2xl font-black text-xl transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 group/btn ${(!isValidPhone || phoneNumber === '') ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-primary hover:brightness-110 shadow-primary/30'}`}
           >
-            Purchase Now
+            Authorize Purchase
+            <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
           </button>
         </div>
       </motion.div>
