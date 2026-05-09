@@ -1,6 +1,9 @@
 import { useState, ChangeEvent } from 'react';
-import { motion } from 'motion/react';
-import { ArrowRight, ShieldCheck, Zap, Globe, MessageSquare, Phone, CreditCard, Wifi } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ArrowRight, Phone, Mail, CheckCircle2, Loader2, ChevronDown } from 'lucide-react';
+import { useOrders } from '../context/OrderContext';
+import { payWithPaystack } from '../lib/paystack';
+import confetti from 'canvas-confetti';
 
 const DATA_PLANS: Record<string, { label: string; price: number }[]> = {
   MTN: [
@@ -38,23 +41,41 @@ export default function Hero() {
   const [network, setNetwork] = useState('MTN');
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [isValidPhone, setIsValidPhone] = useState(true);
+  const [isValidEmail, setIsValidEmail] = useState(true);
   const [isDirty, setIsDirty] = useState(false);
-  
+  const [isEmailDirty, setIsEmailDirty] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [paymentRef, setPaymentRef] = useState('');
+  const { addOrder } = useOrders();
+
   const currentPlans = DATA_PLANS[network];
   const selectedPlan = currentPlans[selectedPlanIndex] || currentPlans[0];
 
   const validatePhone = (value: string) => {
-    // Regex for Ghana: starts with 02 or 05, followed by 8 digits
-    const ghanaPhoneRegex = /^(02|05)\d{8}$/;
-    return ghanaPhoneRegex.test(value);
+    const cleaned = value.replace(/\s+/g, '');
+    return /^(02|05)\d{8}$/.test(cleaned);
+  };
+
+  const FALLBACK_EMAIL = 'vandalsavage111@gmail.com';
+
+  const validateEmail = (value: string) => {
+    if (value.trim() === '') return true; // optional
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
   };
 
   const handlePhoneChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\s+/g, ''); // Remove spaces
-    setPhoneNumber(value);
-    if (isDirty) {
-      setIsValidPhone(validatePhone(value));
+    let value = e.target.value.replace(/[^\d\s]/g, '');
+    const cleaned = value.replace(/\s+/g, '');
+    if (cleaned.length <= 10) {
+      let formatted = '';
+      if (cleaned.length > 0) formatted += cleaned.substring(0, 3);
+      if (cleaned.length > 3) formatted += ' ' + cleaned.substring(3, 6);
+      if (cleaned.length > 6) formatted += ' ' + cleaned.substring(6, 10);
+      setPhoneNumber(formatted);
+      if (isDirty) setIsValidPhone(validatePhone(formatted));
     }
   };
 
@@ -63,180 +84,231 @@ export default function Hero() {
     setIsValidPhone(validatePhone(phoneNumber));
   };
 
+  const handleEmailBlur = () => {
+    if (email.trim() !== '') {
+      setIsEmailDirty(true);
+      setIsValidEmail(validateEmail(email));
+    }
+  };
+
+  const isFormValid = validatePhone(phoneNumber) && validateEmail(email) && !isSubmitting;
+
+  const handleSubmit = () => {
+    if (!isFormValid) return;
+    setIsSubmitting(true);
+
+    const resolvedEmail = email.trim() || FALLBACK_EMAIL;
+
+    payWithPaystack({
+      email: resolvedEmail,
+      amountInCedis: selectedPlan.price,
+      onSuccess: async (ref) => {
+        setPaymentRef(ref);
+
+        await addOrder({
+          network,
+          plan: selectedPlan.label,
+          price: selectedPlan.price,
+          phoneNumber,
+          email: resolvedEmail,
+          paymentRef: ref,
+        });
+
+        setIsSubmitting(false);
+        setIsSuccess(true);
+        confetti({
+          particleCount: 100,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#111', '#888', '#ddd'],
+        });
+      },
+      onClose: () => {
+        setIsSubmitting(false);
+      },
+    });
+  };
+
+  const handleReset = () => {
+    setIsSuccess(false);
+    setPhoneNumber('');
+    setEmail('');
+    setIsDirty(false);
+    setIsEmailDirty(false);
+    setPaymentRef('');
+  };
+
   return (
-    <section className="px-12 py-16 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 items-center max-w-[1440px] mx-auto min-h-[calc(100vh-72px)]">
-      <div className="hero-content">
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-[4rem] leading-[1.05] font-extrabold mb-6 tracking-[-0.05em] text-text-main"
-        >
-          Premium Data <br />
-          <span className="text-primary">at Local Prices.</span>
-        </motion.h1>
-        
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-xl text-text-muted leading-relaxed mb-12 max-w-[550px]"
-        >
-          Connect instantly with the most reliable data marketplace in Ghana. High speed, ultra-low cost, and 100% automated delivery.
-        </motion.p>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-10 mb-16"
-        >
-          <div className="flex items-start gap-5">
-            <div className="icon-box">
-              <Zap className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Instant Delivery</h4>
-              <p className="text-[0.9rem] text-text-muted leading-snug">Receive your data bundle in less than 30 seconds, guaranteed.</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-5">
-            <div className="icon-box">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Secure Assets</h4>
-              <p className="text-[0.9rem] text-text-muted leading-snug">Bank-grade encryption for every transaction and wallet balance.</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-5">
-            <div className="icon-box">
-              <Wifi className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Multi-Network</h4>
-              <p className="text-[0.9rem] text-text-muted leading-snug">Supporting MTN, AirtelTigo, and Vodafone with 99.9% uptime.</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-5">
-            <div className="icon-box">
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-[1.1rem] font-bold mb-1.5 text-text-main">Elite Support</h4>
-              <p className="text-[0.9rem] text-text-muted leading-snug">Our dedicated team is available 24/7 to resolve any billing issues.</p>
-            </div>
-          </div>
-        </motion.div>
-
-        <div className="flex items-center gap-4 text-xs font-bold text-text-muted tracking-widest uppercase py-6 border-t border-black/[0.03]">
-          <span className="shrink-0">Highly Rated by</span>
-          <div className="flex -space-x-2">
-            {[1,2,3,4].map(i => (
-              <img key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100" src={`https://picsum.photos/seed/${i + 10}/32/32`} alt="User" />
-            ))}
-          </div>
-          <span className="ml-2 font-mono">+12k Active Users</span>
-        </div>
-      </div>
-
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3 }}
-        className="card-sleek p-10 relative overflow-hidden group shadow-2xl"
+    <section className="max-w-5xl mx-auto px-6 pt-24 pb-20">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-16"
       >
-        <div className="liquid-bg" />
-        <div className="crystal-border" />
-        <div className="glass-shine" />
-        
-        <h3 className="text-2xl font-black mb-10 text-text-main flex items-center gap-3">
-          <Zap className="w-6 h-6 text-primary fill-primary/10" />
-          Quick Top-up
-        </h3>
-        <div className="space-y-8">
-          <div>
-            <label className="flex items-center gap-2 text-[0.8rem] font-black text-text-muted mb-3 uppercase tracking-[0.15em]">
-              Network Provider
-            </label>
-            <div className="relative group/select">
-              <select 
-                value={network}
-                onChange={(e) => {
-                  setNetwork(e.target.value);
-                  setSelectedPlanIndex(0);
-                }}
-                className="w-full p-4.5 rounded-2xl border border-black/5 bg-white/[0.05] text-text-main outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer appearance-none"
-              >
-                <option value="MTN" className="bg-white">MTN Ghana</option>
-                <option value="AirtelTigo" className="bg-white">AirtelTigo</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted opacity-50 group-hover/select:opacity-100 transition-opacity">
-                <ArrowRight className="w-5 h-5 rotate-90" />
-              </div>
-            </div>
-          </div>
-          <div>
-            <label className="flex items-center gap-2 text-[0.8rem] font-black text-text-muted mb-3 uppercase tracking-[0.15em]">
-              Data Subscription
-            </label>
-            <div className="relative group/select">
-              <select 
-                value={selectedPlanIndex}
-                onChange={(e) => setSelectedPlanIndex(Number(e.target.value))}
-                className="w-full p-4.5 rounded-2xl border border-black/5 bg-white/[0.05] text-text-main outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all cursor-pointer appearance-none"
-              >
-                {currentPlans.map((plan, index) => (
-                  <option key={index} value={index} className="bg-white">
-                    {plan.label} High Speed Plan
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted opacity-50 group-hover/select:opacity-100 transition-opacity">
-                <ArrowRight className="w-5 h-5 rotate-90" />
-              </div>
-            </div>
-          </div>
-          <div>
-            <label className="flex items-center gap-2 text-[0.8rem] font-black text-text-muted mb-3 uppercase tracking-[0.15em]">
-              Recipient Number
-            </label>
-            <div className="relative">
-              <input 
-                type="text" 
-                value={phoneNumber}
-                onChange={handlePhoneChange}
-                onBlur={handlePhoneBlur}
-                placeholder="e.g. 024 123 4567" 
-                className={`w-full p-4.5 rounded-2xl border bg-white/[0.05] text-text-main outline-none focus:ring-4 transition-all placeholder:text-gray-300 font-bold ${!isValidPhone ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/5' : 'border-black/5 focus:border-primary/50 focus:ring-primary/5'}`} 
-              />
-              <Phone className={`absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${!isValidPhone ? 'text-red-500' : 'text-text-muted opacity-30'}`} />
-            </div>
-            {!isValidPhone && (
-              <p className="text-red-600 text-[0.75rem] mt-2 font-bold bg-red-50 p-2 rounded-lg border border-red-100">Invalid format: Must start with 02 or 05 (10 digits).</p>
-            )}
-          </div>
-          
-          <div className="bg-white/[0.05] rounded-2xl p-6 border border-black/5 relative overflow-hidden">
-            <div className="flex justify-between items-end relative z-10">
-              <div className="space-y-1">
-                <span className="block text-[0.7rem] font-black text-text-muted uppercase tracking-widest">Pricing Estimation</span>
-                <span className="text-sm font-bold text-text-muted">GHC {selectedPlan.price.toFixed(2)} total</span>
-              </div>
-              <div className="text-right">
-                <span className="block text-[0.7rem] font-black text-primary uppercase tracking-widest mb-1">Total Payable</span>
-                <span className="text-3xl font-black text-text-main">₵{selectedPlan.price.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
+        <p className="text-sm text-text-muted mb-4">Ghana's data marketplace</p>
+        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4">
+          Affordable data,<br />delivered instantly.
+        </h1>
+        <p className="text-text-muted text-lg max-w-md mx-auto leading-relaxed">
+          Top up your mobile data in seconds. Best prices, no hassle.
+        </p>
+      </motion.div>
 
-          <button 
-            disabled={!isValidPhone || phoneNumber === ''}
-            className={`w-full py-5 text-white rounded-2xl font-black text-xl transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 group/btn ${(!isValidPhone || phoneNumber === '') ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-primary hover:brightness-110 shadow-primary/30'}`}
-          >
-            Authorize Purchase
-            <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-          </button>
-        </div>
+      {/* Form Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="max-w-lg mx-auto"
+      >
+        <AnimatePresence mode="wait">
+          {!isSuccess ? (
+            <motion.div
+              key="form"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="card space-y-6"
+            >
+              {/* Network selector */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-medium text-text-muted">Network</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {['MTN', 'AirtelTigo'].map(p => (
+                    <button
+                      key={p}
+                      onClick={() => { setNetwork(p); setSelectedPlanIndex(0); }}
+                      className={`py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        network === p
+                          ? 'bg-accent text-white'
+                          : 'bg-surface border border-border text-text-muted hover:border-text-muted'
+                      }`}
+                    >
+                      {p === 'MTN' ? 'MTN Ghana' : 'AirtelTigo'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Plan selector */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-medium text-text-muted">Data plan</label>
+                <div className="relative">
+                  <select
+                    value={selectedPlanIndex}
+                    onChange={(e) => setSelectedPlanIndex(Number(e.target.value))}
+                    className="w-full py-3 px-4 pr-10 rounded-xl border border-border bg-surface text-text-main text-sm outline-none focus:border-text-muted transition-colors appearance-none cursor-pointer"
+                  >
+                    {currentPlans.map((plan, index) => (
+                      <option key={index} value={index}>
+                        {plan.label} — ₵{plan.price.toFixed(2)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Phone input */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-medium text-text-muted">Phone number</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    onBlur={handlePhoneBlur}
+                    placeholder="024 123 4567"
+                    className={`w-full py-3 px-4 rounded-xl border bg-surface text-text-main text-sm outline-none transition-colors placeholder:text-text-muted/40 ${
+                      !isValidPhone && isDirty
+                        ? 'border-red-400 focus:border-red-400'
+                        : 'border-border focus:border-text-muted'
+                    }`}
+                  />
+                  <Phone className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                    !isValidPhone && isDirty ? 'text-red-400' : 'text-text-muted/30'
+                  }`} />
+                </div>
+                {!isValidPhone && isDirty && (
+                  <p className="text-xs text-red-400">Enter a valid Ghana number (e.g. 024 123 4567)</p>
+                )}
+              </div>
+
+              {/* Email input */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-medium text-text-muted">Email <span className="text-text-muted/40">(optional)</span></label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); if (isEmailDirty) setIsValidEmail(validateEmail(e.target.value)); }}
+                    onBlur={handleEmailBlur}
+                    placeholder="you@example.com"
+                    className={`w-full py-3 px-4 rounded-xl border bg-surface text-text-main text-sm outline-none transition-colors placeholder:text-text-muted/40 ${
+                      !isValidEmail && isEmailDirty
+                        ? 'border-red-400 focus:border-red-400'
+                        : 'border-border focus:border-text-muted'
+                    }`}
+                  />
+                  <Mail className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                    !isValidEmail && isEmailDirty ? 'text-red-400' : 'text-text-muted/30'
+                  }`} />
+                </div>
+                {!isValidEmail && isEmailDirty && (
+                  <p className="text-xs text-red-400">Enter a valid email address</p>
+                )}
+              </div>
+
+              {/* Price */}
+              <div className="flex items-center justify-between py-4 px-5 rounded-xl bg-surface border border-border">
+                <span className="text-xs font-medium text-text-muted">Total</span>
+                <span className="text-2xl font-semibold text-text-main tabular-nums">
+                  ₵{selectedPlan.price.toFixed(2)}
+                </span>
+              </div>
+
+              {/* Submit */}
+              <button
+                onClick={handleSubmit}
+                disabled={!isFormValid}
+                className={`btn-primary w-full flex items-center justify-center gap-2.5 text-sm ${
+                  !isFormValid ? 'opacity-40 cursor-not-allowed' : ''
+                }`}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    Pay ₵{selectedPlan.price.toFixed(2)}
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="card flex flex-col items-center justify-center py-12 text-center"
+            >
+              <div className="w-16 h-16 rounded-full bg-surface border border-border flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-text-main mb-2">Payment successful!</h3>
+              <p className="text-text-muted text-sm mb-2 max-w-xs leading-relaxed">
+                Your {selectedPlan.label} bundle for <span className="text-text-main font-medium">{phoneNumber}</span> is being processed.
+              </p>
+              <p className="text-xs text-text-muted/60 font-mono mb-8">
+                Ref: {paymentRef}
+              </p>
+              <button onClick={handleReset} className="btn-secondary text-sm">
+                New purchase
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </section>
   );

@@ -1,21 +1,38 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import Networks from './components/Networks';
-import Footer from './components/Footer';
-import Background3D from './components/Background3D';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-white">
-      <Background3D />
-      <Navbar />
-      
-      <main className="relative z-10">
-        <Hero />
-        <Networks />
-      </main>
-      
-      <Footer />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Public home */}
+        <Route
+          path="/"
+          element={
+            <div className="min-h-screen flex flex-col bg-bg">
+              <Navbar />
+              <main><Hero /></main>
+            </div>
+          }
+        />
+
+        {/* Admin login */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+
+        {/* Protected admin dashboard */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }

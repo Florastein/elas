@@ -9,21 +9,22 @@ export default function Networks() {
   ];
 
   return (
-    <section className="py-20 bg-gray-50/50">
-      <div className="max-w-[1440px] mx-auto px-12">
-        <p className="text-center text-sm font-bold text-text-muted uppercase tracking-[0.2em] mb-12">
-          Supporting Major Networks
+    <section className="py-24 relative overflow-hidden">
+      <div className="absolute inset-0 bg-black/[0.02]" />
+      <div className="max-w-[1440px] mx-auto px-12 relative z-10">
+        <p className="text-center text-[0.7rem] font-black text-text-muted uppercase tracking-[0.3em] mb-16">
+          Global Connectivity Partners
         </p>
-        <div className="flex flex-wrap justify-center items-center gap-12 lg:gap-24 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+        <div className="flex flex-wrap justify-center items-center gap-12 lg:gap-24 opacity-30 grayscale hover:opacity-100 transition-all duration-700">
           {networks.map((net) => (
-            <div key={net.name} className="flex items-center gap-3">
+            <div key={net.name} className="flex items-center gap-4 group cursor-pointer">
               <img 
                 src={net.logo} 
                 alt={net.name}
-                className="h-8 w-auto object-contain"
+                className="h-10 w-auto object-contain transition-transform group-hover:scale-110"
                 referrerPolicy="no-referrer"
               />
-              <span className="font-mono text-xs font-bold">{net.name}</span>
+              <span className="text-[0.6rem] font-black tracking-widest text-text-muted group-hover:text-text-main uppercase">{net.name}</span>
             </div>
           ))}
         </div>
