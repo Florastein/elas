@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   collection,
   addDoc,
@@ -36,27 +36,12 @@ interface OrderState {
 const OrderContext = createContext<OrderState | null>(null);
 
 const COLLECTION = 'orders';
-const LOCAL_KEY = 'saab_orders_fallback';
-
-function loadLocalOrders(): Order[] {
-  try {
-    const raw = localStorage.getItem(LOCAL_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalOrders(orders: Order[]) {
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(orders));
-}
 
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const usingFirestore = useRef(true);
 
-  // Real-time Firestore listener with localStorage fallback
+  // Real-time Firestore listener
   useEffect(() => {
     const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
 
@@ -87,9 +72,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       },
       (error) => {
-        console.warn('Firestore unavailable, using local storage:', error.message);
-        usingFirestore.current = false;
-        setOrders(loadLocalOrders());
+        console.error('Firestore error:', error);
         setLoading(false);
       }
     );
@@ -98,59 +81,25 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addOrder = async (data: Omit<Order, 'id' | 'status' | 'createdAt'>) => {
-    if (usingFirestore.current) {
-      try {
-        const writePromise = addDoc(collection(db, COLLECTION), {
-          ...data,
-          status: 'pending' as OrderStatus,
-          createdAt: serverTimestamp(),
-        });
-        const timeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Firestore write timed out')), 5000)
-        );
-        await Promise.race([writePromise, timeout]);
-        return;
-      } catch (err) {
-        console.warn('Firestore write failed, falling back to local:', err);
-        usingFirestore.current = false;
-      }
+    try {
+      await addDoc(collection(db, COLLECTION), {
+        ...data,
+        status: 'pending' as OrderStatus,
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('Failed to add order:', err);
+      throw err;
     }
-
-    // Local fallback
-    const order: Order = {
-      ...data,
-      id: crypto.randomUUID(),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    setOrders((prev) => {
-      const next = [order, ...prev];
-      saveLocalOrders(next);
-      return next;
-    });
   };
 
   const updateStatus = async (id: string, status: OrderStatus) => {
-    if (usingFirestore.current) {
-      try {
-        const writePromise = updateDoc(doc(db, COLLECTION, id), { status });
-        const timeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Firestore update timed out')), 5000)
-        );
-        await Promise.race([writePromise, timeout]);
-        return;
-      } catch (err) {
-        console.warn('Firestore update failed, falling back to local:', err);
-        usingFirestore.current = false;
-      }
+    try {
+      await updateDoc(doc(db, COLLECTION, id), { status });
+    } catch (err) {
+      console.error('Failed to update order status:', err);
+      throw err;
     }
-
-    // Local fallback
-    setOrders((prev) => {
-      const next = prev.map((o) => (o.id === id ? { ...o, status } : o));
-      saveLocalOrders(next);
-      return next;
-    });
   };
 
   return (
